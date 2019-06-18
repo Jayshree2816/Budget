@@ -137,6 +137,12 @@ var UIController = (function() {
 			//Insert html into the DOM
 			document.querySelector(element).insertAdjacentHTML('beforeend' , newHtml)
 		},
+
+		deleteListItem : function(selectorID) {
+			var el = document.getElementById(selectorID)
+			el.parentNode.removeChild(el)
+		},
+
 		clearFields: function () {
 			var fields, fieldsArr
 			fields = document.querySelectorAll(DOMstrings.inputDescription + ', ' + DOMstrings.inputValue)
@@ -184,7 +190,7 @@ var controller = (function(budgetCtrl, UICtrl) {
 		// Return the Budget
 		var budget = budgetCtrl.getBudget()
 		// Display the Budget on UI
-		
+		UICtrl.displayBudget(budget)
 	}
 
 	var ctrlAddItem = function() {
@@ -202,12 +208,9 @@ var controller = (function(budgetCtrl, UICtrl) {
 		//Clear the fields
 			UICtrl.clearFields()
 
-		//Calculate and update the budget
-			updateBudget()
-
 		//Display the budget on the UI
+			updateBudget()
 		}
-
 
 	}
 
@@ -219,7 +222,8 @@ var controller = (function(budgetCtrl, UICtrl) {
 			type = splitID[0]
 			ID = parseInt(splitID[1]) 
 			budgetCtrl.deleteItem(type, ID)
-
+			UICtrl.deleteListItem(itemID)
+			updateBudget()
 		}
 	}
 
