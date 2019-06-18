@@ -5,7 +5,22 @@ var budgetController = (function() {
 		this.id = id
 		this.description = description
 		this.value = value
+		this.percentage = -1
 	}
+
+	Expense.prototype.calcPercentage = function(totalIncome) {
+		if (totalIncome > 0) {
+			this.percentage = Math.round((this.value /totalIncome) * 100)
+		} else {
+			this.percentage = -1
+		}
+		
+	}
+
+	Expense.prototype.getPercentage = function() {
+		return this.percentage
+	}
+
 	var Income = function(id , description, value ) {
 		this.id = id
 		this.description = description
@@ -82,6 +97,20 @@ var budgetController = (function() {
 			}
 			 
 		},
+
+		calculatePercentages : function() {
+			data.allItems.exp.forEach(function(cur) {
+				cur.calcPercentage(data.totals.inc)
+			})
+		},
+
+		getPercentages : function() {
+			var allPerc = data.allItems.exp.map(function(cur) {
+				return cur.getPercentage(data.totals.inc)
+			})
+			return allPerc
+		},
+
 		getBudget : function() {
 			return {
 				budget : data.budget,
@@ -109,7 +138,8 @@ var UIController = (function() {
 		incomeLabel : '.budget_income--value',
 		expensesLabel : '.budget_expenses--value',
 		percentageLabel : '.budget_expenses--percentage',
-		container : '.container'
+		container : '.container',
+		expensesPercLabel : '.item_percentage'
 	}
 	return  {
 		getInput:function() {
@@ -128,7 +158,7 @@ var UIController = (function() {
 				html ='<div class="item clearfix" id="inc-%id%"><div class="item_description">%description%</div><div class="right clearfix"><div class="item_value">%value%</div><div class="item_delete"><button class="item_delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>'
 			} else if(type === 'exp') {
 				element= DOMstrings.expensesContainer
-				html ='<div class="item clearfix" id="exp-%id%"><div class="item_description">%description%</div><div class="right clearfix"><div class="item_value">%value%</div><div class="item_percentage">21%</div><div class="item_delete"><button clas="item_delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>'
+				html ='<div class="item clearfix" id="exp-%id%"><div class="item_description">%description%</div><div class="right clearfix"><div class="item_value">%value%</div><div class="item_percentage">21%</div><div class="item_delete"><button class="item_delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>'
 			}
 			// replace placeholder tag with actual data
 			newHtml = html.replace('%id%', obj.id)
@@ -164,6 +194,22 @@ var UIController = (function() {
 			}
 		},
 
+		displayPercentages : function(percentages) {
+			var fields = document.querySelectorAll(DOMstrings.expensesPercLabel)
+			var nodeListEach = function(list, callback) {
+				for(var i = 0 ; i < list.length ; i++) {
+					callback(list[i] , i)
+				}
+			}
+			nodeListEach(fields , function(current, index) {
+				if(percentages[index] > 0) {
+					current.textContent = percentages[index] + '%'
+				} else{
+					current.textContent = '---'
+				}
+			})
+		},
+
 		getDOMstrings : function() {
 			return DOMstrings
 		}
@@ -184,6 +230,7 @@ var controller = (function(budgetCtrl, UICtrl) {
 		})
 		document.querySelector(DOM.container).addEventListener('click', ctrlDeleteItem)
 	}
+
 	var updateBudget = function() {
 		// Calculate the budget
 		budgetCtrl.calculateBudget()
@@ -191,6 +238,16 @@ var controller = (function(budgetCtrl, UICtrl) {
 		var budget = budgetCtrl.getBudget()
 		// Display the Budget on UI
 		UICtrl.displayBudget(budget)
+	}
+
+	updatePercentages = function() {
+		// Calculate Percentages
+		budgetCtrl.calculatePercentages()
+
+		// Read percentages from the budget controller
+		var percentages = budgetCtrl.getPercentages()
+		// Update the UI with the percentage
+		UICtrl.displayPercentages(percentages)
 	}
 
 	var ctrlAddItem = function() {
@@ -210,10 +267,13 @@ var controller = (function(budgetCtrl, UICtrl) {
 
 		//Display the budget on the UI
 			updateBudget()
+
+		// Calculate and update percentage
+			updatePercentages()
 		}
 
 	}
-
+	
 	var ctrlDeleteItem = function(event) {
 		var itemID, splitID, type, ID
 		itemID= event.target.parentNode.parentNode.parentNode.parentNode.id
@@ -224,6 +284,7 @@ var controller = (function(budgetCtrl, UICtrl) {
 			budgetCtrl.deleteItem(type, ID)
 			UICtrl.deleteListItem(itemID)
 			updateBudget()
+			updatePercentages()
 		}
 	}
 
