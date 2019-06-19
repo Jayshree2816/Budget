@@ -185,11 +185,13 @@ body {
     float: left;
     width: 475px;
     margin-right: 50px;
+    text-align: center
 }
 
 .expenses {
     float: left;
     width: 475px;
+    text-align: center
 }
 
 h2 {
